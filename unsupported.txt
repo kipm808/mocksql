@@ -1,0 +1,574 @@
+MOCKSQL UNSUPPORTED FEATURES
+============================
+
+This document lists SQL Server features that are NOT supported by mocksql.
+mocksql is designed for testing basic SQL operations, not as a complete
+SQL Server replacement.
+
+Last Updated: 2026-05-25
+
+
+STORED PROCEDURES & PROGRAMMABILITY
+====================================
+
+CREATE PROCEDURE / ALTER PROCEDURE / DROP PROCEDURE
+User-defined stored procedures (only sp_executesql is supported for parameterized queries)
+Stored procedure parameters with OUTPUT direction
+EXEC / EXECUTE for calling stored procedures
+Stored procedure return values
+@@IDENTITY, @@ROWCOUNT, SCOPE_IDENTITY() within procedures
+TRY...CATCH error handling
+THROW / RAISERROR
+WHILE loops
+IF...ELSE control flow
+GOTO statements
+Local variables (DECLARE @var)
+SET @var = value
+PRINT statements
+Dynamic SQL via EXEC()
+
+
+USER-DEFINED FUNCTIONS
+=======================
+
+CREATE FUNCTION / ALTER FUNCTION / DROP FUNCTION
+Scalar functions
+Table-valued functions (TVF)
+Inline table-valued functions
+Multi-statement table-valued functions
+
+
+TRIGGERS
+========
+
+CREATE TRIGGER / ALTER TRIGGER / DROP TRIGGER
+AFTER triggers (INSERT, UPDATE, DELETE)
+INSTEAD OF triggers
+DDL triggers
+Logon triggers
+inserted and deleted pseudo-tables
+TRIGGER_NESTLEVEL()
+
+
+VIEWS
+=====
+
+CREATE VIEW / ALTER VIEW / DROP VIEW
+User-defined views (only system views like sys.tables are supported)
+Indexed views
+Updatable views
+WITH CHECK OPTION
+SCHEMABINDING
+
+
+INDEXES
+=======
+
+CREATE INDEX / ALTER INDEX / DROP INDEX
+Clustered indexes
+Non-clustered indexes
+Unique indexes (UNIQUE constraint not enforced)
+Filtered indexes
+Columnstore indexes
+Spatial indexes
+XML indexes
+Full-text indexes
+Index hints (WITH (INDEX=...))
+REBUILD / REORGANIZE
+Statistics (CREATE STATISTICS, UPDATE STATISTICS)
+
+
+CONSTRAINTS
+===========
+
+PRIMARY KEY constraints (not enforced)
+FOREIGN KEY constraints (not enforced)
+UNIQUE constraints (not enforced)
+CHECK constraints (not enforced)
+DEFAULT constraints (not enforced in schema)
+NOT NULL enforcement (accepts NULL anywhere)
+
+
+ADVANCED QUERY FEATURES
+========================
+
+Window functions:
+  - ROW_NUMBER()
+  - RANK()
+  - DENSE_RANK()
+  - NTILE()
+  - LAG()
+  - LEAD()
+  - FIRST_VALUE()
+  - LAST_VALUE()
+  - OVER (PARTITION BY ... ORDER BY ...)
+  - ROWS BETWEEN / RANGE BETWEEN
+
+PIVOT / UNPIVOT
+
+MERGE statement (INSERT/UPDATE/DELETE in one statement)
+
+OUTPUT clause:
+  - OUTPUT inserted.*
+  - OUTPUT deleted.*
+  - OUTPUT INTO
+
+Recursive CTEs (WITH ... AS (recursive query))
+
+APPLY operators:
+  - CROSS APPLY
+  - OUTER APPLY
+
+FOR XML:
+  - FOR XML RAW
+  - FOR XML AUTO
+  - FOR XML EXPLICIT
+  - FOR XML PATH
+
+FOR JSON:
+  - FOR JSON AUTO
+  - FOR JSON PATH
+
+OPENJSON / JSON functions (JSON_VALUE, JSON_QUERY, etc.)
+
+OPENROWSET / OPENQUERY
+
+Table hints:
+  - WITH (NOLOCK)
+  - WITH (ROWLOCK)
+  - WITH (UPDLOCK)
+  - WITH (HOLDLOCK)
+  - WITH (READPAST)
+  - WITH (XLOCK)
+  - WITH (TABLOCK)
+
+Query hints:
+  - OPTION (RECOMPILE)
+  - OPTION (MAXDOP n)
+  - OPTION (OPTIMIZE FOR)
+  - OPTION (USE PLAN)
+
+Locking hints and isolation levels (SET TRANSACTION ISOLATION LEVEL accepted but not enforced)
+
+
+DATA TYPES
+==========
+
+User-defined data types (UDT)
+User-defined table types
+XML data type
+Spatial data types (GEOMETRY, GEOGRAPHY)
+HIERARCHYID
+SQL_VARIANT
+ROWVERSION / TIMESTAMP (accepts but doesn't auto-increment)
+IMAGE, TEXT, NTEXT (deprecated, not supported)
+CURSOR data type
+
+
+SCHEMA & DATABASE MANAGEMENT
+=============================
+
+CREATE DATABASE / ALTER DATABASE / DROP DATABASE
+USE database (single database model)
+CREATE SCHEMA / ALTER SCHEMA / DROP SCHEMA
+Multi-schema support (all tables in dbo schema)
+ALTER AUTHORIZATION
+Database snapshots
+Filegroups
+Partitioning (table partitioning)
+
+
+SECURITY & USERS
+================
+
+CREATE LOGIN / ALTER LOGIN / DROP LOGIN
+CREATE USER / ALTER USER / DROP USER
+CREATE ROLE / ALTER ROLE / DROP ROLE
+Authentication (accepts any username/password)
+Authorization (GRANT/REVOKE accepted but not enforced)
+Row-level security
+Dynamic data masking
+Always Encrypted
+Transparent Data Encryption (TDE)
+Column-level permissions
+Audit logs
+
+
+TEMPORAL TABLES
+===============
+
+System-versioned temporal tables
+FOR SYSTEM_TIME clause
+PERIOD FOR SYSTEM_TIME
+
+
+SEQUENCES
+=========
+
+CREATE SEQUENCE / ALTER SEQUENCE / DROP SEQUENCE
+NEXT VALUE FOR
+
+
+SYNONYMS
+========
+
+CREATE SYNONYM / DROP SYNONYM
+
+
+CURSORS
+=======
+
+DECLARE CURSOR
+OPEN / FETCH / CLOSE / DEALLOCATE
+Cursor variables
+@@FETCH_STATUS
+SCROLL cursors
+DYNAMIC cursors
+KEYSET cursors
+
+
+TRANSACTIONS (Advanced)
+=======================
+
+Distributed transactions (BEGIN DISTRIBUTED TRANSACTION)
+Two-phase commit
+@@TRANCOUNT (transaction nesting)
+Transaction isolation enforcement (READ UNCOMMITTED, SERIALIZABLE, etc.)
+Lock escalation
+Deadlock detection
+
+
+REPLICATION & HIGH AVAILABILITY
+================================
+
+Replication (snapshot, transactional, merge)
+Log shipping
+Always On Availability Groups
+Database mirroring
+Peer-to-peer replication
+Change Data Capture (CDC)
+Change Tracking
+
+
+BACKUP & RESTORE
+================
+
+BACKUP DATABASE / RESTORE DATABASE
+Differential backups
+Transaction log backups
+Point-in-time recovery
+Snapshot backups
+
+
+BULK OPERATIONS
+===============
+
+BULK INSERT
+bcp utility integration
+OPENROWSET(BULK...)
+Format files
+
+
+FULL-TEXT SEARCH
+================
+
+CREATE FULLTEXT CATALOG
+CREATE FULLTEXT INDEX
+CONTAINS / FREETEXT predicates
+Full-text functions
+
+
+SERVICE BROKER
+==============
+
+CREATE QUEUE / ALTER QUEUE / DROP QUEUE
+CREATE SERVICE
+BEGIN DIALOG / SEND / RECEIVE / END CONVERSATION
+Message types
+Contracts
+
+
+LINKED SERVERS
+==============
+
+sp_addlinkedserver
+sp_addlinkedsrvlogin
+Four-part names (server.database.schema.table)
+OPENQUERY
+
+
+SYSTEM FUNCTIONS & METADATA
+============================
+
+@@VERSION
+@@SERVERNAME
+@@SPID
+@@ERROR
+@@TRANCOUNT
+@@NESTLEVEL
+OBJECT_ID() (except for basic table lookups)
+OBJECT_NAME()
+COL_NAME() / COL_LENGTH()
+INDEX_COL()
+COLUMNPROPERTY()
+DATABASEPROPERTYEX()
+SERVERPROPERTY()
+HAS_PERMS_BY_NAME()
+
+
+STRING FUNCTIONS (Limited)
+===========================
+
+Supported: Basic string operations in expressions
+Unsupported:
+STUFF()
+REPLACE() (partial support)
+REVERSE()
+REPLICATE()
+SPACE()
+CHARINDEX() (basic support may exist)
+PATINDEX()
+QUOTENAME()
+STR()
+FORMAT()
+STRING_SPLIT()
+STRING_AGG()
+CONCAT_WS()
+TRANSLATE()
+TRIM() / LTRIM() / RTRIM() (limited support)
+
+
+DATE/TIME FUNCTIONS (Limited)
+==============================
+
+Supported: Basic date comparisons
+Unsupported:
+GETDATE() / GETUTCDATE()
+CURRENT_TIMESTAMP
+DATEADD()
+DATEDIFF() / DATEDIFF_BIG()
+DATEPART()
+DATENAME()
+YEAR() / MONTH() / DAY()
+EOMONTH()
+DATEFROMPARTS()
+DATETIMEFROMPARTS()
+SYSDATETIME()
+SYSUTCDATETIME()
+
+
+MATHEMATICAL FUNCTIONS (Limited)
+=================================
+
+Supported: Basic arithmetic (+, -, *, /, %)
+Unsupported:
+ABS() (may have basic support)
+CEILING() / FLOOR()
+ROUND() (may have basic support)
+POWER()
+SQRT()
+SQUARE()
+EXP()
+LOG() / LOG10()
+SIN() / COS() / TAN()
+ASIN() / ACOS() / ATAN() / ATAN2()
+DEGREES() / RADIANS()
+SIGN()
+PI()
+RAND()
+
+
+CONVERSION FUNCTIONS (Limited)
+===============================
+
+Supported: CAST() for basic types
+Unsupported:
+CONVERT() with style parameters
+TRY_CAST()
+TRY_CONVERT()
+PARSE()
+TRY_PARSE()
+
+
+AGGREGATE FUNCTIONS (Limited)
+==============================
+
+Supported: COUNT, SUM, AVG, MIN, MAX, COUNT(DISTINCT)
+Unsupported:
+STDEV() / STDEVP()
+VAR() / VARP()
+CHECKSUM_AGG()
+GROUPING()
+GROUPING_ID()
+STRING_AGG()
+APPROX_COUNT_DISTINCT()
+
+
+ANALYTICAL FUNCTIONS
+====================
+
+PERCENTILE_CONT()
+PERCENTILE_DISC()
+CUME_DIST()
+PERCENT_RANK()
+
+
+SYSTEM STORED PROCEDURES
+=========================
+
+sp_help
+sp_helptext
+sp_columns
+sp_tables
+sp_rename
+sp_adduser / sp_dropuser
+sp_addrolemember / sp_droprolemember
+sp_configure
+sp_who / sp_who2
+sp_lock
+sp_spaceused
+sp_depends
+
+
+EXTENDED STORED PROCEDURES
+===========================
+
+xp_cmdshell
+xp_sendmail
+xp_msver
+All other xp_* procedures
+
+
+CLR INTEGRATION
+===============
+
+CREATE ASSEMBLY
+CLR stored procedures
+CLR functions
+CLR aggregates
+CLR user-defined types
+
+
+XML FEATURES
+============
+
+xml data type
+XQuery
+XML Schema Collections
+FOR XML
+OPENXML
+xml.value()
+xml.query()
+xml.exist()
+xml.modify()
+
+
+MEMORY-OPTIMIZED TABLES
+========================
+
+In-Memory OLTP
+MEMORY_OPTIMIZED = ON
+Natively compiled procedures
+
+
+GRAPH FEATURES
+==============
+
+CREATE TABLE ... AS NODE
+CREATE TABLE ... AS EDGE
+MATCH clause
+SHORTEST_PATH()
+
+
+QUERY STORE
+===========
+
+Query Store configuration
+Query performance tracking
+Automatic plan regression detection
+
+
+POLYBASE
+========
+
+External tables
+External data sources
+Hadoop integration
+Azure Blob Storage integration
+
+
+PERFORMANCE & MONITORING
+=========================
+
+Execution plans (SHOWPLAN)
+SET STATISTICS IO
+SET STATISTICS TIME
+sys.dm_* dynamic management views (only basic sys.* views supported)
+Extended Events
+SQL Profiler / Trace
+Performance counters
+
+
+MISCELLANEOUS
+=============
+
+WAITFOR DELAY / WAITFOR TIME
+BEGIN...END blocks (in procedures)
+Comments in stored procedures (-- comments work in SQL batch)
+@@IDENTITY vs SCOPE_IDENTITY() vs IDENT_CURRENT()
+IDENTITY(seed, increment) auto-increment columns
+NEWID() / NEWSEQUENTIALID()
+CHECKSUM() / BINARY_CHECKSUM()
+COMPRESS() / DECOMPRESS()
+CONTEXT_INFO() / SET CONTEXT_INFO
+SESSION_CONTEXT()
+ORIGINAL_LOGIN()
+SUSER_NAME() / SUSER_SNAME()
+USER_NAME()
+IS_MEMBER()
+IS_ROLEMEMBER()
+IS_SRVROLEMEMBER()
+
+
+COMPATIBILITY & MIGRATION TOOLS
+================================
+
+Compatibility level (DATABASE_COMPATIBILITY_LEVEL)
+Database migration tools (SSMA, DMA)
+Upgrade Advisor
+Cardinality estimation versions
+
+
+NOTES
+=====
+
+1. mocksql is designed for TESTING, not production use
+2. Focus is on core SQL DML/DDL operations for integration tests
+3. No schema enforcement (constraints, foreign keys, etc.)
+4. No query optimization (full table scans only)
+5. Authentication accepts any credentials
+6. Authorization (GRANT/REVOKE) is parsed but not enforced
+7. Transactions are parsed but ACID guarantees are file-based only
+8. System views (sys.tables, sys.columns) return minimal data
+
+
+WHAT IS SUPPORTED
+=================
+
+See README.md for the full list of 460+ tested features including:
+- Core SELECT/INSERT/UPDATE/DELETE
+- JOINs (INNER, LEFT, RIGHT, FULL, CROSS)
+- Subqueries and CTEs
+- Aggregation (GROUP BY, HAVING)
+- Set operations (UNION, INTERSECT, EXCEPT)
+- CASE expressions
+- WHERE clause with all operators
+- ORDER BY and pagination (TOP, OFFSET-FETCH)
+- Basic DDL (CREATE TABLE, DROP TABLE, TRUNCATE)
+- Parameterized queries (sp_executesql)
+- NULL handling and three-valued logic
+
+
+For detailed supported features, run the test suites:
+  cd mocksql && cargo test --test integration
+  cd sqltests && cargo run
