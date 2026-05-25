@@ -424,10 +424,6 @@ Contributions are welcome! Areas for improvement:
 - Performance improvements
 - Documentation
 
-## License
-
-[Add your license here]
-
 ## Acknowledgments
 
 Built with:

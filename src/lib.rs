@@ -4032,6 +4032,7 @@ pub(crate) async fn send_tds_response<S: AsyncWrite + Unpin>(rows: &Vec<Value>, 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde_json::json;
     use tempfile::TempDir;
     use tokio::net::TcpListener;
 
@@ -4111,5 +4112,325 @@ mod tests {
         let mut buf = vec![]; client.read_to_end(&mut buf).await.unwrap();
         // missing table now sends a DONE token
         assert!(!buf.is_empty() && buf[0] == 0x04);
+    }
+
+    // ========================================================================
+    // Unit tests for complex pure functions (recommended by TESTING_ANALYSIS.md)
+    // ========================================================================
+
+    // 1. LIKE pattern matching tests
+    #[test]
+    fn like_match_percent_wildcard_at_end() {
+        assert!(like_match("hello", "h%", '\\'));
+        assert!(like_match("hello", "he%", '\\'));
+        assert!(like_match("hello", "hello%", '\\'));
+        assert!(!like_match("hello", "x%", '\\'));
+    }
+
+    #[test]
+    fn like_match_percent_wildcard_at_start() {
+        assert!(like_match("hello", "%o", '\\'));
+        assert!(like_match("hello", "%lo", '\\'));
+        assert!(like_match("hello", "%hello", '\\'));
+        assert!(!like_match("hello", "%x", '\\'));
+    }
+
+    #[test]
+    fn like_match_percent_wildcard_middle() {
+        assert!(like_match("hello", "h%o", '\\'));
+        assert!(like_match("hello", "he%lo", '\\'));
+        assert!(like_match("hello world", "hello%world", '\\'));
+        assert!(!like_match("hello", "h%x", '\\'));
+    }
+
+    #[test]
+    fn like_match_multiple_percent_wildcards() {
+        assert!(like_match("hello", "%e%", '\\'));
+        assert!(like_match("hello", "h%l%o", '\\'));
+        assert!(like_match("hello world", "%o%o%", '\\'));
+        assert!(!like_match("hello", "%x%y%", '\\'));
+    }
+
+    #[test]
+    fn like_match_underscore_wildcard() {
+        assert!(like_match("hello", "h_llo", '\\'));
+        assert!(like_match("hello", "_ello", '\\'));
+        assert!(like_match("hello", "hell_", '\\'));
+        assert!(like_match("hello", "_____", '\\'));
+        assert!(!like_match("hello", "h_o", '\\'));
+        assert!(!like_match("hello", "______", '\\'));
+    }
+
+    #[test]
+    fn like_match_underscore_and_percent() {
+        assert!(like_match("hello", "h_l%", '\\'));
+        assert!(like_match("hello", "%_llo", '\\'));
+        assert!(like_match("hello", "h%_o", '\\'));
+    }
+
+    #[test]
+    fn like_match_escape_percent() {
+        assert!(like_match("100%", "100\\%", '\\'));
+        assert!(like_match("50%off", "50\\%off", '\\'));
+        assert!(!like_match("100", "100\\%", '\\'));
+        // Without escape, % is wildcard
+        assert!(like_match("100", "100%", '\\'));
+        assert!(like_match("100xyz", "100%", '\\'));
+    }
+
+    #[test]
+    fn like_match_escape_underscore() {
+        assert!(like_match("a_b", "a\\_b", '\\'));
+        assert!(like_match("test_file", "test\\_file", '\\'));
+        assert!(!like_match("axb", "a\\_b", '\\'));
+        // Without escape, _ matches single char
+        assert!(like_match("axb", "a_b", '\\'));
+    }
+
+    #[test]
+    fn like_match_escape_backslash() {
+        assert!(like_match("a\\b", "a\\\\b", '\\'));
+        assert!(like_match("\\", "\\\\", '\\'));
+    }
+
+    #[test]
+    fn like_match_empty_pattern() {
+        assert!(like_match("", "", '\\'));
+        assert!(!like_match("hello", "", '\\'));
+    }
+
+    #[test]
+    fn like_match_empty_value() {
+        assert!(like_match("", "", '\\'));
+        assert!(like_match("", "%", '\\'));
+        assert!(!like_match("", "_", '\\'));
+        assert!(!like_match("", "a", '\\'));
+    }
+
+    #[test]
+    fn like_match_only_wildcards() {
+        assert!(like_match("anything", "%", '\\'));
+        assert!(like_match("", "%", '\\'));
+        assert!(like_match("hello", "%%", '\\'));
+        assert!(like_match("hello", "%%%", '\\'));
+    }
+
+    #[test]
+    fn like_match_complex_patterns() {
+        // SQL Server documentation examples
+        assert!(like_match("abc", "abc", '\\'));
+        assert!(like_match("abc", "a%c", '\\'));
+        assert!(like_match("abc", "a_c", '\\'));
+        assert!(like_match("abc", "_bc", '\\'));
+        assert!(like_match("abc", "ab_", '\\'));
+        assert!(like_match("abc", "a__", '\\'));   // "a" + 2 chars = "abc"
+        assert!(!like_match("ab", "a__", '\\'));   // Too short
+        assert!(like_match("abcd", "a__d", '\\'));
+    }
+
+    // 2. Date arithmetic tests
+    #[test]
+    fn days_in_month_31_day_months() {
+        assert_eq!(days_in_month(2024, 1), 31);  // January
+        assert_eq!(days_in_month(2024, 3), 31);  // March
+        assert_eq!(days_in_month(2024, 5), 31);  // May
+        assert_eq!(days_in_month(2024, 7), 31);  // July
+        assert_eq!(days_in_month(2024, 8), 31);  // August
+        assert_eq!(days_in_month(2024, 10), 31); // October
+        assert_eq!(days_in_month(2024, 12), 31); // December
+    }
+
+    #[test]
+    fn days_in_month_30_day_months() {
+        assert_eq!(days_in_month(2024, 4), 30);  // April
+        assert_eq!(days_in_month(2024, 6), 30);  // June
+        assert_eq!(days_in_month(2024, 9), 30);  // September
+        assert_eq!(days_in_month(2024, 11), 30); // November
+    }
+
+    #[test]
+    fn days_in_month_february_leap_years() {
+        assert_eq!(days_in_month(2024, 2), 29); // Leap year
+        assert_eq!(days_in_month(2020, 2), 29); // Leap year
+        assert_eq!(days_in_month(2000, 2), 29); // Century leap year (divisible by 400)
+        assert_eq!(days_in_month(1600, 2), 29); // Century leap year
+    }
+
+    #[test]
+    fn days_in_month_february_non_leap_years() {
+        assert_eq!(days_in_month(2023, 2), 28); // Not a leap year
+        assert_eq!(days_in_month(2025, 2), 28); // Not a leap year
+        assert_eq!(days_in_month(1900, 2), 28); // Century non-leap year (divisible by 100, not 400)
+        assert_eq!(days_in_month(2100, 2), 28); // Century non-leap year
+    }
+
+    #[test]
+    fn date_add_days_simple() {
+        assert_eq!(date_add("2024-01-15", "day", 10), "2024-01-25");
+        assert_eq!(date_add("2024-06-20", "day", 5), "2024-06-25");
+    }
+
+    #[test]
+    fn date_add_days_month_boundary() {
+        assert_eq!(date_add("2024-01-25", "day", 10), "2024-02-04");
+        assert_eq!(date_add("2024-03-28", "day", 5), "2024-04-02");
+    }
+
+    #[test]
+    fn date_add_days_year_boundary() {
+        assert_eq!(date_add("2024-12-28", "day", 5), "2025-01-02");
+    }
+
+    #[test]
+    fn date_add_days_leap_year_boundary() {
+        assert_eq!(date_add("2024-02-27", "day", 3), "2024-03-01"); // Feb 29 exists
+        assert_eq!(date_add("2023-02-27", "day", 3), "2023-03-02"); // Feb 29 doesn't exist
+    }
+
+    #[test]
+    fn date_add_months_simple() {
+        assert_eq!(date_add("2024-01-15", "month", 3), "2024-04-15");
+        assert_eq!(date_add("2024-06-10", "month", 2), "2024-08-10");
+    }
+
+    #[test]
+    fn date_add_months_year_boundary() {
+        assert_eq!(date_add("2024-11-15", "month", 3), "2025-02-15");
+    }
+
+    #[test]
+    fn date_add_months_negative() {
+        assert_eq!(date_add("2024-03-15", "month", -2), "2024-01-15");
+    }
+
+    #[test]
+    fn date_add_years_simple() {
+        assert_eq!(date_add("2024-06-15", "year", 1), "2025-06-15");
+        assert_eq!(date_add("2024-06-15", "year", 5), "2029-06-15");
+    }
+
+    #[test]
+    fn date_add_years_negative() {
+        assert_eq!(date_add("2024-06-15", "year", -1), "2023-06-15");
+    }
+
+    #[test]
+    fn date_diff_days_simple() {
+        assert_eq!(date_diff("2024-01-01", "2024-01-10", "day"), 9);
+    }
+
+    #[test]
+    fn date_diff_years() {
+        assert_eq!(date_diff("2020-01-01", "2024-01-01", "year"), 4);
+    }
+
+    #[test]
+    fn date_diff_months() {
+        assert_eq!(date_diff("2024-01-01", "2024-06-01", "month"), 5);
+    }
+
+    // 3. Arithmetic with NULL tests
+    #[test]
+    fn eval_arithmetic_basic_operations() {
+        let five = json!(5);
+        let three = json!(3);
+
+        assert_eq!(eval_arithmetic(&five, &three, |a, b| a + b), json!("8"));
+        assert_eq!(eval_arithmetic(&five, &three, |a, b| a - b), json!("2"));
+        assert_eq!(eval_arithmetic(&five, &three, |a, b| a * b), json!("15"));
+
+        let result = eval_arithmetic(&json!(10), &json!(2), |a, b| a / b);
+        assert_eq!(result, json!("5"));
+    }
+
+    #[test]
+    fn eval_arithmetic_floating_point() {
+        let result = eval_arithmetic(&json!("5.5"), &json!("2.5"), |a, b| a + b);
+        assert_eq!(result, json!("8"));
+
+        let result = eval_arithmetic(&json!("10.5"), &json!("2"), |a, b| a / b);
+        // Should return decimal string
+        assert!(result.as_str().unwrap().starts_with("5.25"));
+    }
+
+    #[test]
+    fn eval_arithmetic_string_numbers() {
+        // Should parse strings as numbers
+        let result = eval_arithmetic(&json!("100"), &json!("50"), |a, b| a + b);
+        assert_eq!(result, json!("150"));
+    }
+
+    // 4. Value comparison tests
+    #[test]
+    fn compare_values_integers() {
+        assert_eq!(compare_values(&json!(5), &json!(3)), 1);
+        assert_eq!(compare_values(&json!(3), &json!(5)), -1);
+        assert_eq!(compare_values(&json!(5), &json!(5)), 0);
+    }
+
+    #[test]
+    fn compare_values_floats() {
+        assert_eq!(compare_values(&json!(5.5), &json!(3.2)), 1);
+        assert_eq!(compare_values(&json!(3.2), &json!(5.5)), -1);
+        assert_eq!(compare_values(&json!(5.5), &json!(5.5)), 0);
+    }
+
+    #[test]
+    fn compare_values_float_equality_epsilon() {
+        // Should handle floating point precision
+        assert_eq!(compare_values(&json!(0.1 + 0.2), &json!(0.3)), 0);
+    }
+
+    #[test]
+    fn compare_values_numeric_strings() {
+        assert_eq!(compare_values(&json!("100"), &json!("20")), 1);
+        assert_eq!(compare_values(&json!("5"), &json!("10")), -1);
+        assert_eq!(compare_values(&json!("42"), &json!("42")), 0);
+    }
+
+    #[test]
+    fn compare_values_string_comparison_fallback() {
+        // Non-numeric strings should use lexicographic comparison
+        assert_eq!(compare_values(&json!("hello"), &json!("world")), -1);
+        assert_eq!(compare_values(&json!("zebra"), &json!("apple")), 1);
+        assert_eq!(compare_values(&json!("same"), &json!("same")), 0);
+    }
+
+    #[test]
+    fn compare_values_mixed_numeric_string() {
+        // "10" vs 10 - both should be treated as numeric
+        assert_eq!(compare_values(&json!("10"), &json!(10)), 0);
+        assert_eq!(compare_values(&json!(10), &json!("10")), 0);
+    }
+
+    #[test]
+    fn compare_values_negative_numbers() {
+        assert_eq!(compare_values(&json!(-5), &json!(3)), -1);
+        assert_eq!(compare_values(&json!(3), &json!(-5)), 1);
+        assert_eq!(compare_values(&json!(-10), &json!(-20)), 1);
+    }
+
+    // 5. Days in month edge cases
+    #[test]
+    fn days_in_month_invalid_month() {
+        // Fallback for invalid months
+        assert_eq!(days_in_month(2024, 0), 30);
+        assert_eq!(days_in_month(2024, 13), 30);
+        assert_eq!(days_in_month(2024, 99), 30);
+    }
+
+    #[test]
+    fn days_in_month_leap_year_rules() {
+        // Year divisible by 4: leap year
+        assert_eq!(days_in_month(2024, 2), 29);
+        assert_eq!(days_in_month(2028, 2), 29);
+
+        // Year divisible by 100: not a leap year
+        assert_eq!(days_in_month(1900, 2), 28);
+        assert_eq!(days_in_month(2100, 2), 28);
+
+        // Year divisible by 400: leap year
+        assert_eq!(days_in_month(2000, 2), 29);
+        assert_eq!(days_in_month(2400, 2), 29);
     }
 }
